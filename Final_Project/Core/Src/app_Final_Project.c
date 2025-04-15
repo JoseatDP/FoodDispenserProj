@@ -23,7 +23,7 @@ extern UART_HandleTypeDef huart2;
 
 
 //Should be declared as volatile if variables' values are changed in ISR.
-volatile int inmotion;
+volatile int motion;
 volatile char rxData;
 
 void App_Init(void) {
@@ -37,6 +37,7 @@ void App_Init(void) {
 	HAL_UART_Receive_IT(&huart2, (uint8_t*) &rxData, 1); //Start the Rx interrupt.
 
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+	Servo_Angle(&htim2, TIM_CHANNEL_2, 0);
 
 }
 
@@ -51,32 +52,21 @@ void Servo_Angle(TIM_HandleTypeDef *htim, uint32_t channel, uint8_t angle){
 void App_MainLoop(void) {
 
 
-	static uint8_t stop_detection = 0;
-	static uint8_t prev_State = 0;
 
 	motion = HAL_GPIO_ReadPin(PIR_PORT, PIR_PIN);
 
-	if(motion == 1 && stop_detection == 0){
+	if(motion == 1){
 
-		stop_detection = 1; //this prevents the sensor from re-triggering when a hand is held over the sensor AKA even if the hand stays there food only dispenses once
 
 		UART_TransmitString(&huart2, "Food Dispensing", 1);
 
-		Servo_Angle(&htim2, TIM_CHANNEL_2, 90);
-		HAL_Delay(5000); //5 seconds to dispense
+		Servo_Angle(&htim2, TIM_CHANNEL_2, 165);
+		HAL_Delay(2500); //5 seconds to dispense
 
 		Servo_Angle(&htim2, TIM_CHANNEL_2, 0);
-		HAL_Delay(2000); //cool down time
+		HAL_Delay(1000); //cool down time
 	}
 
-	else if(motion == 0 && stop_detection == 1){
-		stop_detection = 0; //this resets trigger when there is no motion
-	}
-
-	if(motion == 1 && prev_State == 1){ //stops ready to dispense from printing infinitely
-		 UART_TransmitString(&huart2, "Ready to dispense", 1);
-	}
-	prev_State = motion;
 }
 
 
