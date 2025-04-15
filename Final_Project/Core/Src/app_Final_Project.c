@@ -50,11 +50,16 @@ void Servo_Angle(TIM_HandleTypeDef *htim, uint32_t channel, uint8_t angle){
 
 void App_MainLoop(void) {
 
-	inmotion = HAL_GPIO_ReadPin(PIR_PORT, PIR_PIN);
-	static uint8_t stopdetection = 0;
 
-	if(inmotion == 1 & stopdetection == 0){
-		stopdetection = 1; //this prevents the sensor from re-triggering when a hand is held over the sensor AKA even if the hand stays there food only dispenses once
+	static uint8_t stop_detection = 0;
+	static uint8_t prev_State = 0;
+
+	motion = HAL_GPIO_ReadPin(PIR_PORT, PIR_PIN);
+
+	if(motion == 1 && stop_detection == 0){
+
+		stop_detection = 1; //this prevents the sensor from re-triggering when a hand is held over the sensor AKA even if the hand stays there food only dispenses once
+
 		UART_TransmitString(&huart2, "Food Dispensing", 1);
 
 		Servo_Angle(&htim2, TIM_CHANNEL_2, 90);
@@ -63,11 +68,15 @@ void App_MainLoop(void) {
 		Servo_Angle(&htim2, TIM_CHANNEL_2, 0);
 		HAL_Delay(2000); //cool down time
 	}
-	else if(inmotion == 0){
-		stopdetection = 0; //this resets trigger when there is no motion
-		UART_TransmitString(&huart2, "Ready to dispense", 1);
+
+	else if(motion == 0 && stop_detection == 1){
+		stop_detection = 0; //this resets trigger when there is no motion
 	}
 
+	if(motion == 1 && prev_State == 1){ //stops ready to dispense from printing infinitely
+		 UART_TransmitString(&huart2, "Ready to dispense", 1);
+	}
+	prev_State = motion;
 }
 
 
