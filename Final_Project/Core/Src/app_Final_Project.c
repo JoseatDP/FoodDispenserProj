@@ -7,6 +7,9 @@
 #include "app.h"
 
 /* Private define ------------------------------------------------------------*/
+#define		LED_PORT			GPIOA
+#define		LED_PIN				GPIO_PIN_5
+
 #define 	PIR_PORT 			GPIOA
 #define 	PIR_PIN 			GPIO_PIN_8
 
@@ -70,11 +73,13 @@ void App_MainLoop(void) {
 	if(mode == 0){
 		motion = HAL_GPIO_ReadPin(PIR_PORT, PIR_PIN);
 		if(motion == 1){
+			HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
 			UART_TransmitString(&huart2, "Food Dispensing", 1);
 			Servo_Angle(&htim2, TIM_CHANNEL_2, 165);
 			HAL_Delay(2500); //2.5 seconds to dispense
 			Servo_Angle(&htim2, TIM_CHANNEL_2, 0);
 			UART_TransmitString(&huart2, "Ready to dispense", 1);
+			HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_RESET);
 			HAL_Delay(1000); //cool down time
 		}
 	}
